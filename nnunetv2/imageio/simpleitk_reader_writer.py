@@ -35,6 +35,9 @@ class SimpleITKIO(BaseReaderWriter):
 
         spacings_for_nnunet = []
         for f in image_fnames:
+            import os
+            if not os.path.exists(f):
+                raise FileNotFoundError(f"File {f} does not exist")
             itk_image = sitk.ReadImage(f)
             spacings.append(itk_image.GetSpacing())
             origins.append(itk_image.GetOrigin())

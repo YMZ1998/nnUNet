@@ -12,11 +12,12 @@ OUTPUT_ROOT = r"D:\AI-data\nnUNet_raw"
 TASK_NAME = "Dataset001_Heart"
 OUTPUT_ROOT = os.path.join(OUTPUT_ROOT, TASK_NAME)
 
-STRUCT_ORDER = ["Heart",
-                "A_Aorta", "A_Cflx", "A_Coronary_L", "A_Coronary_R", "A_LAD",
-                "A_Pulmonary", "Atrium_L", "Atrium_R", "V_Venacava_S",
-                "Ventricle_L", "Ventricle_R"
-                ]  # 顺序决定 label ID
+STRUCT_ORDER = [
+    # "Heart",
+    "A_Aorta", "A_Cflx", "A_Coronary_L", "A_Coronary_R",
+    "A_LAD", "A_Pulmonary", "Atrium_L", "Atrium_R", "V_Venacava_S",
+    "Ventricle_L", "Ventricle_R"
+]  # 顺序决定 label ID
 # ====================
 if os.path.exists(OUTPUT_ROOT):
     print(f"{OUTPUT_ROOT} exists, please delete it first.")
@@ -60,8 +61,8 @@ for pid in patients:
 
 print("== Conversion done! ==")
 
-labels =  {str(i + 1): name for i, name in enumerate(STRUCT_ORDER)}
-labels["background"] = 0  # background
+labels = {name: i + 1 for i, name in enumerate(STRUCT_ORDER)}
+labels["background"] = 0
 
 generate_dataset_json(
     output_folder=OUTPUT_ROOT,
