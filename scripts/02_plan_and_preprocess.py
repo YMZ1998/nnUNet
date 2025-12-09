@@ -13,7 +13,7 @@ def nnUNet_plan_and_preprocess(task_ids, configurations=['2d', '3d_fullres', '3d
 
     # preprocessing
     print('Preprocessing...')
-    preprocess(task_ids, configurations=configurations, num_processes=num_preprocess)  #
+    preprocess(task_ids, configurations=configurations, num_processes=num_preprocess)
 
 
 if __name__ == "__main__":
