@@ -35,13 +35,14 @@ if __name__ == '__main__':
     model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
 
     model_dir = join(nnUNet_results, dataset_name, model_config)
+    dataset_json_file = join(nnUNet_results, dataset_name, model_config, 'dataset.json')
+    plans_file = join(nnUNet_results, dataset_name, model_config, 'plans.json')
     print(model_dir)
 
     # folder_ref = join(nnUNet_raw, dataset_name, 'labelsTr')
     folder_ref = join(nnUNet_raw, maybe_convert_to_dataset_name(2), 'labelsTr')
     folder_pred = join(model_dir, 'validation')
-    dataset_json_file = join(nnUNet_results, dataset_name, model_config, 'dataset.json')
-    plans_file = join(nnUNet_results, dataset_name, model_config, 'plans.json')
+
     output_file = join(folder_pred, 'summary.json')
 
     image_reader_writer = SimpleITKIO()
