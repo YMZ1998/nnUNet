@@ -25,7 +25,7 @@ def nnUNet_predict(model_dir, checkpoint_name, input_file, output_file):
 
     predictor.initialize_from_trained_model_folder(
         model_training_output_dir=model_dir,
-        use_folds=[0],  # 使用哪个 fold
+        use_folds=[1],  # 使用哪个 fold
         checkpoint_name=checkpoint_name,
     )
 
@@ -53,6 +53,8 @@ if __name__ == "__main__":
     out_dir = join(model_dir, 'predictions')
     os.makedirs(out_dir, exist_ok=True)
     output_file = join(out_dir, os.path.basename(input_file))
+    input_file=r'D:\Data\Test\case8\Thorax.nii.gz'
+    output_file = input_file.replace('.nii.gz', '_seg.nii.gz')
     print(f"Output file: {output_file}")
 
     nnUNet_predict(model_dir, checkpoint_name, input_file, output_file)

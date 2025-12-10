@@ -10,13 +10,13 @@ from nnunetv2.paths import nnUNet_results, nnUNet_raw
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 
 
-def predict_nnunet(model_dir, fold, checkpoint, input_paths, output_paths, gpu_id=0):
+def predict_nnunet(model_dir, fold, checkpoint, input_paths, output_paths):
     predictor = nnUNetPredictor(
         tile_step_size=0.5,
         use_gaussian=True,
         use_mirroring=False,
         perform_everything_on_device=True,
-        device=torch.device('cuda', gpu_id),
+        device=torch.device('cuda', 0),
         verbose=True,
         verbose_preprocessing=True,
         allow_tqdm=True
@@ -37,14 +37,16 @@ def predict_nnunet(model_dir, fold, checkpoint, input_paths, output_paths, gpu_i
 
 
 if __name__ == "__main__":
-    TASK_ID = 1
+    TASK_ID = 3
     checkpoint = 'checkpoint_best.pth'
-    fold = '1'
+    fold = "all"
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
+    # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
+    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
 
-    model_dir = join(nnUNet_results, dataset_name, 'nnUNetTrainer__nnUNetPlans__3d_fullres')
+    model_dir = join(nnUNet_results, dataset_name, model_config)
     # images_dir = join(nnUNet_raw, dataset_name, 'imagesTr')
-    images_dir = join(nnUNet_raw, maybe_convert_to_dataset_name(2), 'imagesTr')
+    images_dir = join(nnUNet_raw, maybe_convert_to_dataset_name(TASK_ID), 'imagesTs')
     input_files = [join(images_dir, f) for f in os.listdir(images_dir) if f.endswith(('.nii', '.nii.gz'))]
 
     output_dir = join(model_dir, 'validation')

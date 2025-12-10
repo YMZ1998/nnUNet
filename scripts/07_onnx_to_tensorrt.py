@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 
 import pycuda.driver as cuda
@@ -57,7 +58,7 @@ def onnx_to_trt(onnx_file: str, trt_file: str, fp16: bool = True, workspace_frac
 
     # 保存 engine
     with open(trt_file, 'wb') as f:
-        f.write(engine.serialize())
+        f.write(engine)
     print(f"TensorRT engine saved to {trt_file}")
 
     end_time = time.time()
@@ -74,5 +75,7 @@ if __name__ == "__main__":
     trt_file = paths.trt_file
     print("trt_file:", trt_file)
     print(f"TensorRT version: {trt.__version__}")
+    print(f"trtexec --onnx={onnx_file}  --saveEngine={trt_file} --fp16")
+    shutil.copy(trt_file, os.path.join(r"D:\code\dipper.ai\output\release\engine", os.path.basename(trt_file)))
 
-    engine = onnx_to_trt(onnx_file, trt_file, fp16=True, workspace_fraction=0.5)
+    # engine = onnx_to_trt(onnx_file, trt_file, fp16=True, workspace_fraction=0.5)

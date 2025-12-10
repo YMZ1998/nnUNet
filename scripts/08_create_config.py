@@ -85,8 +85,9 @@ def convert_config(task_name, plans_file, dataset_json_file):
 
 
 if __name__ == '__main__':
-    TASK_ID = 1
-    model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
+    TASK_ID = 3
+    # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
+    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
     convert_config(paths.dataset_name, paths.plans_file, paths.dataset_json_file)

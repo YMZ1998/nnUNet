@@ -87,10 +87,7 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
         export_file,
         input_names=['input'],
         output_names=['output'],
-        opset_version=17,
-        do_constant_folding=True,
-        verbose=False,
-        training=torch.onnx.TrainingMode.EVAL
+        opset_version=13
     )
     print(f"ONNX model exported to: {export_file}")
 

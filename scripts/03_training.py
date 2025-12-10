@@ -2,13 +2,12 @@ import torch
 from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
 from nnunetv2.paths import nnUNet_preprocessed
-from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 from nnunetv2.training.nnUNetTrainer.variants.data_augmentation.nnUNetTrainerNoMirroring import nnUNetTrainerNoMirroring
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nnunetv2.utilities.plans_handling.plans_handler import PlansManager
 
 # python ./nnunetv2/run/run_training.py 1 3d_fullres all -num_gpus 1 -tr nnUNetTrainerNoMirroring
-task_id = 1
+task_id = 3
 dataset_json = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'dataset.json'))
 plans = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'nnUNetPlans.json'))
 # plans['configurations']['3d_fullres']['batch_size'] = 8
@@ -19,15 +18,15 @@ configuration_manager = plans_manager.get_configuration('3d_fullres')
 print('configuration_manager:', configuration_manager)
 print('batch_size:', configuration_manager.batch_size)
 
-trainer = nnUNetTrainer(
+trainer = nnUNetTrainerNoMirroring(
     plans=plans,
     configuration='3d_fullres',
-    fold=1,
+    fold="all",
     dataset_json=dataset_json,
-    device=torch.device('cuda')
+    device=torch.device('cuda', 0),
 )
 
-trainer.num_epochs=1000
+trainer.num_epochs = 1000
 print("num_epochs: ", trainer.num_epochs)
 # trainer.initialize()
 
