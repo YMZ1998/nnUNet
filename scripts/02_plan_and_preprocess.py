@@ -23,6 +23,6 @@ if __name__ == "__main__":
     configurations = ['3d_fullres']
     num_preprocess = [4]
 
-    task_ids = [1]
+    task_ids = [2]
 
     nnUNet_plan_and_preprocess(task_ids, configurations, num_preprocess, overwrite_target_spacing)

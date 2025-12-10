@@ -61,6 +61,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
     preprocessed_dataset_folder_base = join(nnUNet_preprocessed, maybe_convert_to_dataset_name(dataset_name_or_id))
     plans_file = join(preprocessed_dataset_folder_base, plans_identifier + '.json')
     plans = load_json(plans_file)
+    # plans['configurations']['3d_fullres']['batch_size'] = 4
     dataset_json = load_json(join(preprocessed_dataset_folder_base, 'dataset.json'))
     nnunet_trainer = nnunet_trainer(plans=plans, configuration=configuration, fold=fold,
                                     dataset_json=dataset_json, device=device)

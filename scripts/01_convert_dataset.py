@@ -7,9 +7,9 @@ import numpy as np
 from nnunetv2.dataset_conversion.generate_dataset_json import generate_dataset_json
 
 # ==== 参数配置 =====
-INPUT_ROOT = r"D:\Data\seg\open_atlas\test_atlas\data"
+INPUT_ROOT = r"D:\Data\seg\open_atlas\test_atlas\data2"
 OUTPUT_ROOT = r"D:\AI-data\nnUNet_raw"
-TASK_NAME = "Dataset001_Heart"
+TASK_NAME = "Dataset002_Heart"
 OUTPUT_ROOT = os.path.join(OUTPUT_ROOT, TASK_NAME)
 
 STRUCT_ORDER = [

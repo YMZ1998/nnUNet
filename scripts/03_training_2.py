@@ -9,7 +9,7 @@ from nnunetv2.run.run_training import run_training
 def run_training_entry():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-dataset_name_or_id', type=str,required=False,  default='1',
+    parser.add_argument('-dataset_name_or_id', type=str, required=False, default='1',
                         help="Dataset name or ID to train with")
     parser.add_argument('-configuration', type=str, required=False, default='3d_fullres',
                         help="Configuration that should be trained")
@@ -24,14 +24,14 @@ def run_training_entry():
                              'be used when actually training. Beta. Use with caution.')
     parser.add_argument('-num_gpus', type=int, default=1, required=False,
                         help='Specify the number of GPUs to use for training')
-    parser.add_argument('--npz', action='store_true', required=False,
+    parser.add_argument('--npz', required=False, default=True,
                         help='[OPTIONAL] Save softmax predictions from final validation as npz files (in addition to predicted '
                              'segmentations). Needed for finding the best ensemble.')
-    parser.add_argument('--c', action='store_true', required=False,
+    parser.add_argument('--c', required=False, default=False,
                         help='[OPTIONAL] Continue training from latest checkpoint')
-    parser.add_argument('--val', action='store_true', required=False,
+    parser.add_argument('--val', required=False, default=False,
                         help='[OPTIONAL] Set this flag to only run the validation. Requires training to have finished.')
-    parser.add_argument('--val_best', action='store_true', required=False,
+    parser.add_argument('--val_best', required=False, default=True,
                         help='[OPTIONAL] If set, the validation will be performed with the checkpoint_best instead '
                              'of checkpoint_final. NOT COMPATIBLE with --disable_checkpointing! '
                              'WARNING: This will use the same \'validation\' folder as the regular validation '

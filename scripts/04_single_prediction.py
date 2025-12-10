@@ -2,6 +2,7 @@ import os
 from os.path import join
 
 import torch
+from totalsegmentator.nnunet import nnUNetv2_predict
 
 from nnunetv2.imageio.simpleitk_reader_writer import SimpleITKIO
 from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
@@ -38,26 +39,20 @@ def nnUNet_predict(model_dir, checkpoint_name, input_file, output_file):
 
 
 if __name__ == "__main__":
-    # 配置
     TASK_ID = 1
     checkpoint_name = 'checkpoint_best.pth'
-
-    # 数据集名称
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 
-    # 模型目录
     model_dir = join(nnUNet_results, dataset_name, 'nnUNetTrainer__nnUNetPlans__3d_fullres')
 
-    # 输入影像（这里选取 imagesTr 中的第一个影像）
+
     images_tr_dir = join(nnUNet_raw, dataset_name, 'imagesTr')
     input_file = join(images_tr_dir, os.listdir(images_tr_dir)[0])
     print(f"Input file: {input_file}")
 
-    # 输出目录和文件
-    out_dir = join(nnUNet_raw, dataset_name, 'predictions')
+    out_dir = join(model_dir, 'predictions')
     os.makedirs(out_dir, exist_ok=True)
     output_file = join(out_dir, os.path.basename(input_file))
     print(f"Output file: {output_file}")
 
-    # 执行预测
     nnUNet_predict(model_dir, checkpoint_name, input_file, output_file)

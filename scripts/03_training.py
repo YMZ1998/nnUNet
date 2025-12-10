@@ -1,5 +1,3 @@
-import json
-
 import torch
 from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
@@ -13,22 +11,24 @@ from nnunetv2.utilities.plans_handling.plans_handler import PlansManager
 task_id = 1
 dataset_json = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'dataset.json'))
 plans = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'nnUNetPlans.json'))
+# plans['configurations']['3d_fullres']['batch_size'] = 8
 
 # now get plans and configuration managers
 plans_manager = PlansManager(plans)
 configuration_manager = plans_manager.get_configuration('3d_fullres')
-# configuration_manager['batch_size'] = 8
-print(configuration_manager)
+print('configuration_manager:', configuration_manager)
+print('batch_size:', configuration_manager.batch_size)
 
 trainer = nnUNetTrainer(
     plans=plans,
     configuration='3d_fullres',
-    fold=0,
+    fold=1,
     dataset_json=dataset_json,
     device=torch.device('cuda')
 )
 
-trainer.progress_bar = True  # 强制开启 tqdm（如果版本支持）
+trainer.num_epochs=1000
+print("num_epochs: ", trainer.num_epochs)
 # trainer.initialize()
 
 trainer.run_training()
