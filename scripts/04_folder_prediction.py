@@ -16,7 +16,7 @@ def predict_nnunet(model_dir, fold, checkpoint, input_paths, output_paths):
         use_gaussian=True,
         use_mirroring=False,
         perform_everything_on_device=True,
-        device=torch.device('cuda', 0),
+        device=torch.device('cuda', 1),
         verbose=True,
         verbose_preprocessing=True,
         allow_tqdm=True

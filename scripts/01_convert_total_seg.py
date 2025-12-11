@@ -6,7 +6,10 @@ approach is trained on 3mm CT scans.
 The lower resolution approach uses a single nnUNet model to predict all 104 classes.
 The full resolution approach uses 5 nnUNet models, each predicting 21 classes (total of 104).
 """
+
 from nnunetv2.paths import nnUNet_raw
+from scripts.convert_nii_direction import convert_LPI_to_RAI
+from scripts.dir_process import remove_and_create_dir
 
 CLASS_MAP_ALL = {
     1: "spleen",
@@ -285,7 +288,8 @@ def resample_image_to_spacing(image, new_spacing, default_value, interpolator='l
     spacing = image.GetSpacing()
     size = image.GetSize()
     new_size = [int(round(siz * spac / n_spac)) for siz, spac, n_spac in zip(size, spacing, new_spacing)]
-    return sitk.Resample(
+
+    img_resampled = sitk.Resample(
         image,
         new_size,  # size
         sitk.Transform(),  # transform
@@ -296,6 +300,11 @@ def resample_image_to_spacing(image, new_spacing, default_value, interpolator='l
         default_value,  # defaultPixelValue
         image.GetPixelID()  # outputPixelType
     )
+    # print(img_resampled.GetDirection())
+    # 再转 RAI
+    img_RAI = convert_LPI_to_RAI(img_resampled)
+    # print(img_RAI.GetDirection())
+    return img_RAI
 
 
 def merge_masks(segmentations_path: str, class_map: dict) -> sitk.Image:
@@ -353,30 +362,33 @@ def process_patient(patient: str,
         class_map (dict): A dictionary mapping the class names to their label values.
         df (pd.DataFrame): The metadata provided in the TotalSegmentator dataset loaded as a DataFrame.
     """
+    try:
+        # Resample the images and masks to the target spacing, merge the masks, and save them to the target directory
+        scan = sitk.ReadImage(str(patient / "ct.nii.gz"))
+        scan = resample_image_to_spacing(scan, new_spacing=target_spacing, default_value=-1024, interpolator="linear")
 
-    # Resample the images and masks to the target spacing, merge the masks, and save them to the target directory
-    scan = sitk.ReadImage(str(patient / "ct.nii.gz"))
-    scan = resample_image_to_spacing(scan, new_spacing=target_spacing, default_value=-1024, interpolator="linear")
+        # Merge the masks according to the class map
+        mask = merge_masks(patient / "segmentations", class_map)
+        mask = resample_image_to_spacing(mask, new_spacing=target_spacing, default_value=0, interpolator="nearest")
+        mask = sitk.Cast(mask, sitk.sitkUInt8)
 
-    # Merge the masks according to the class map
-    mask = merge_masks(patient / "segmentations", class_map)
-    mask = resample_image_to_spacing(mask, new_spacing=target_spacing, default_value=0, interpolator="nearest")
-    mask = sitk.Cast(mask, sitk.sitkUInt8)
+        # Get the split (train, val, test) of the patient
+        split = df.loc[df["image_id"] == patient.name, "split"].values[0]
+        # nnUNet's naming is "imagesTr" for train and "imagesTs" for test, there is no val split directory.
+        # Instead, it used cross-validation. However, TotalSegmentator has a predefined train, val, and test split,
+        # and we achieve that by copying the `splits_final.json` into the nnUNet's preprocessed directory of the dataset.
+        train_or_test = "Ts" if split == "test" else "Tr"
 
-    # Get the split (train, val, test) of the patient
-    split = df.loc[df["image_id"] == patient.name, "split"].values[0]
-    # nnUNet's naming is "imagesTr" for train and "imagesTs" for test, there is no val split directory.
-    # Instead, it used cross-validation. However, TotalSegmentator has a predefined train, val, and test split,
-    # and we achieve that by copying the `splits_final.json` into the nnUNet's preprocessed directory of the dataset.
-    train_or_test = "Ts" if split == "test" else "Tr"
+        # TotalSegmentator's naming is "sXXXX" (e.g., s0191). Get the last 4 characters to use as the nnUNet case identifier.
+        case_identifier = patient.name[-4:]
+        scan_output_path = output_dir / f"images{train_or_test}/TotalSegmentator_{case_identifier}_0000.nii.gz"
+        mask_output_path = output_dir / f"labels{train_or_test}/TotalSegmentator_{case_identifier}.nii.gz"
 
-    # TotalSegmentator's naming is "sXXXX" (e.g., s0191). Get the last 4 characters to use as the nnUNet case identifier.
-    case_identifier = patient.name[-4:]
-    scan_output_path = output_dir / f"images{train_or_test}/TotalSegmentator_{case_identifier}_0000.nii.gz"
-    mask_output_path = output_dir / f"labels{train_or_test}/TotalSegmentator_{case_identifier}.nii.gz"
-
-    sitk.WriteImage(scan, str(scan_output_path), useCompression=True)
-    sitk.WriteImage(mask, str(mask_output_path), useCompression=True)
+        sitk.WriteImage(scan, str(scan_output_path), useCompression=True)
+        sitk.WriteImage(mask, str(mask_output_path), useCompression=True)
+    except Exception as e:
+        # 捕获异常，打印错误并继续
+        print(f"[ERROR] Failed to process patient {patient.name}: {e}")
 
 
 def create_dataset(input_dir: str,
@@ -398,10 +410,10 @@ def create_dataset(input_dir: str,
 
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True, parents=True)
+    remove_and_create_dir(output_dir)
 
     # Get all patient directories
-    patients = [x for x in input_dir.iterdir() if x.is_dir()]
+    patients = [x for x in input_dir.iterdir() if x.is_dir()][:]
 
     # Read the metadata provided in the TotalSegmentator dataset
     df = pd.read_csv(input_dir / "meta.csv", delimiter=";")
@@ -442,8 +454,8 @@ def create_dataset(input_dir: str,
 if __name__ == "__main__":
     create_dataset(
         input_dir=r"D:\Data\seg\Totalsegmentator_dataset_v201",
-        output_dir=os.path.join(nnUNet_raw, "Dataset003_TotalSegmentator"),
-        target_spacing=[3, 3, 3],
-        class_map=CLASS_MAP_5_PARTS["organs"],
+        output_dir=os.path.join(nnUNet_raw, "Dataset004_TotalSegmentator"),
+        target_spacing=[1, 1, 3],
+        class_map=CLASS_MAP_5_PARTS["vertebrae"],
         num_cores=128
     )
