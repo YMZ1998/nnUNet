@@ -1,3 +1,5 @@
+import os
+
 import torch
 from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
@@ -6,28 +8,36 @@ from nnunetv2.training.nnUNetTrainer.variants.data_augmentation.nnUNetTrainerNoM
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nnunetv2.utilities.plans_handling.plans_handler import PlansManager
 
-# python ./nnunetv2/run/run_training.py 1 3d_fullres all -num_gpus 1 -tr nnUNetTrainerNoMirroring
-task_id = 3
-dataset_json = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'dataset.json'))
-plans = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'nnUNetPlans.json'))
-# plans['configurations']['3d_fullres']['batch_size'] = 8
 
-# now get plans and configuration managers
-plans_manager = PlansManager(plans)
-configuration_manager = plans_manager.get_configuration('3d_fullres')
-print('configuration_manager:', configuration_manager)
-print('batch_size:', configuration_manager.batch_size)
+def training_model(task_id):
+    # python ./nnunetv2/run/run_training.py 1 3d_fullres all -num_gpus 1 -tr nnUNetTrainerNoMirroring
+    dataset_json = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'dataset.json'))
+    plans = load_json(join(nnUNet_preprocessed, maybe_convert_to_dataset_name(task_id), 'nnUNetPlans.json'))
+    # plans['configurations']['3d_fullres']['batch_size'] = 8
 
-trainer = nnUNetTrainerNoMirroring(
-    plans=plans,
-    configuration='3d_fullres',
-    fold="all",
-    dataset_json=dataset_json,
-    device=torch.device('cuda', 0),
-)
+    # now get plans and configuration managers
+    plans_manager = PlansManager(plans)
+    configuration_manager = plans_manager.get_configuration('3d_fullres')
+    print('configuration_manager:', configuration_manager)
+    print('batch_size:', configuration_manager.batch_size)
 
-trainer.num_epochs = 1000
-print("num_epochs: ", trainer.num_epochs)
-# trainer.initialize()
+    trainer = nnUNetTrainerNoMirroring(
+        plans=plans,
+        configuration='3d_fullres',
+        fold="all",
+        dataset_json=dataset_json,
+        device=torch.device('cuda'),
+    )
 
-trainer.run_training()
+    trainer.num_epochs = 1000
+    print("num_epochs: ", trainer.num_epochs)
+    # trainer.initialize()
+
+    trainer.run_training()
+
+
+if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
+    task_id = 5
+    training_model(task_id)

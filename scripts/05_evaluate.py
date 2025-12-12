@@ -29,7 +29,7 @@ def auto_regions_from_dataset_json(dataset_json_path):
 
 
 if __name__ == '__main__':
-    TASK_ID = 3
+    TASK_ID = 4
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 
     # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'

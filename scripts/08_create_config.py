@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 
 from scripts.nnunet_model_paths import NNUnetModelPaths
 
@@ -82,12 +83,15 @@ def convert_config(task_name, plans_file, dataset_json_file):
     with open(out_filename, 'w') as json_file:
         json.dump(cfg, json_file, indent=4)
     print(f"Config saved to {out_filename}")
+    shutil.copy(out_filename, os.path.join(r"D:\code\dipper.ai\output\release\config", config_name))
 
 
 if __name__ == '__main__':
-    TASK_ID = 3
+    TASK_ID = 5
     # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
     model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
     convert_config(paths.dataset_name, paths.plans_file, paths.dataset_json_file)
+
+

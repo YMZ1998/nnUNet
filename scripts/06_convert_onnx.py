@@ -18,7 +18,7 @@ def to_numpy(tensor):
 def convert_and_validate_onnx(model_dir, fold, export_file):
     predictor = nnUNetPredictor(
         tile_step_size=0.5,
-        use_gaussian=True,
+        use_gaussian=False,
         use_mirroring=False,
         perform_everything_on_device=True,
         device=torch.device('cuda', 0),
@@ -42,16 +42,16 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
     network.eval()
 
     # 修复 InstanceNorm
-    for m in network.modules():
-        if isinstance(m, (torch.nn.InstanceNorm1d,
-                          torch.nn.InstanceNorm2d,
-                          torch.nn.InstanceNorm3d)):
-            m.track_running_stats = True
-            if m.running_mean is None:
-                m.running_mean = torch.zeros(m.num_features, device=m.weight.device)
-            if m.running_var is None:
-                m.running_var = torch.ones(m.num_features, device=m.weight.device)
-            m.eval()
+    # for m in network.modules():
+    #     if isinstance(m, (torch.nn.InstanceNorm1d,
+    #                       torch.nn.InstanceNorm2d,
+    #                       torch.nn.InstanceNorm3d)):
+    #         m.track_running_stats = True
+    #         if m.running_mean is None:
+    #             m.running_mean = torch.zeros(m.num_features, device=m.weight.device)
+    #         if m.running_var is None:
+    #             m.running_var = torch.ones(m.num_features, device=m.weight.device)
+    #         m.eval()
 
     # 创建输入张量 (1, 1, D, H, W)
     input_tensor = torch.randn((1, 1, *patch_size)).to(device)
@@ -63,6 +63,10 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
         export_file,
         input_names=['input'],
         output_names=['output'],
+        verbose=False,
+        export_params=True,
+        opset_version=12,
+        do_constant_folding=True,
     )
     print(f"ONNX model exported to: {export_file}")
 
@@ -81,8 +85,9 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
 
     np.testing.assert_allclose(to_numpy(torch_output), ort_outputs[0], rtol=1e-2, atol=1e-2)
     print("ONNXRuntime output matches PyTorch output.")
+
 if __name__ == "__main__":
-    TASK_ID = 3
+    TASK_ID = 5
     fold = 'all'
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 

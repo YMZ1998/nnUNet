@@ -2,11 +2,17 @@ import os
 from os.path import join
 
 import numpy as np
+import onnx
+import onnxruntime
 import torch
 
 from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 from nnunetv2.paths import nnUNet_results
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
+
+
+def to_numpy(tensor):
+    return tensor.detach().cpu().numpy()
 
 
 def convert_onnx(model_dir, fold, export_file):
@@ -44,13 +50,30 @@ def convert_onnx(model_dir, fold, export_file):
     device = torch.device('cuda', 0)
     network = predictor.network.cuda(device)
     network.eval()
-    input = torch.randn(tuple(patch_size)).cuda(device, non_blocking=True)
-    input = input[np.newaxis, np.newaxis, :]
-    torch.onnx.export(network, input, export_file, input_names=['input'], output_names=['output'])
+    input_tensor = torch.randn(tuple(patch_size)).cuda(device, non_blocking=True)
+    input_tensor = input_tensor[np.newaxis, np.newaxis, :]
+    print("input_tensor", input_tensor.shape)
+    torch.onnx.export(network, input_tensor, export_file, input_names=['input'], output_names=['output'])
+
+    torch_output = network(input_tensor)
+    try:
+        onnx_model = onnx.load(export_file)
+        onnx.checker.check_model(onnx_model)
+        print("ONNX model check passed.")
+    except Exception as e:
+        print(f"ONNX model check failed: {e}")
+        return
+
+    ort_session = onnxruntime.InferenceSession(export_file, providers=["CPUExecutionProvider"])
+    ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(input_tensor)}
+    ort_outputs = ort_session.run(None, ort_inputs)
+
+    np.testing.assert_allclose(to_numpy(torch_output), ort_outputs[0], rtol=1e-2, atol=1e-2)
+    print("ONNXRuntime output matches PyTorch output.")
 
 
 if __name__ == "__main__":
-    TASK_ID = 3
+    TASK_ID = 4
     fold = 'all'
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 

@@ -21,8 +21,8 @@ if __name__ == "__main__":
     # num_preprocess = [8, 4, 8]
     overwrite_target_spacing = None
     configurations = ['3d_fullres']
-    num_preprocess = [4]
+    num_preprocess = [8]
 
-    task_ids = [3]
+    task_ids = [5]
 
     nnUNet_plan_and_preprocess(task_ids, configurations, num_preprocess, overwrite_target_spacing)

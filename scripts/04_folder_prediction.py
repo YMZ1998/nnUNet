@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 from os.path import join
 
 import torch
@@ -37,7 +38,8 @@ def predict_nnunet(model_dir, fold, checkpoint, input_paths, output_paths):
 
 
 if __name__ == "__main__":
-    TASK_ID = 3
+    start_time = time.time()
+    TASK_ID = 4
     checkpoint = 'checkpoint_best.pth'
     fold = "all"
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
@@ -47,6 +49,8 @@ if __name__ == "__main__":
     model_dir = join(nnUNet_results, dataset_name, model_config)
     # images_dir = join(nnUNet_raw, dataset_name, 'imagesTr')
     images_dir = join(nnUNet_raw, maybe_convert_to_dataset_name(TASK_ID), 'imagesTs')
+    shutil.copytree(images_dir, join(model_dir, 'imagesTs'))
+
     input_files = [join(images_dir, f) for f in os.listdir(images_dir) if f.endswith(('.nii', '.nii.gz'))]
 
     output_dir = join(model_dir, 'validation')
@@ -56,3 +60,7 @@ if __name__ == "__main__":
     output_files = [join(output_dir, os.path.basename(f).replace('_0000.nii.gz', '.nii.gz')) for f in input_files]
 
     predict_nnunet(model_dir, fold, checkpoint, input_files, output_files)
+
+    end_time = time.time()
+    print(f"Total time: {end_time - start_time:.2f} seconds")
+

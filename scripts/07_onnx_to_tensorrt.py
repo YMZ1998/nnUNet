@@ -23,9 +23,6 @@ def get_max_workspace_size(fraction: float = 0.5):
 
 
 def onnx_to_trt(onnx_file: str, trt_file: str, fp16: bool = True, workspace_fraction: float = 0.5):
-    """
-    将 ONNX 模型转换为 TensorRT Engine，如果 engine 文件已存在则直接加载
-    """
     start_time = time.time()
 
     if not os.path.exists(onnx_file):
@@ -63,11 +60,11 @@ def onnx_to_trt(onnx_file: str, trt_file: str, fp16: bool = True, workspace_frac
 
     end_time = time.time()
     print(f"Total conversion/loading time: {end_time - start_time:.2f} seconds")
-    return engine  # 返回 engine 对象，可直接用于推理
+    return engine
 
 
 if __name__ == "__main__":
-    TASK_ID = 3
+    TASK_ID = 5
     model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
@@ -76,6 +73,7 @@ if __name__ == "__main__":
     print("trt_file:", trt_file)
     print(f"TensorRT version: {trt.__version__}")
     print(f"trtexec --onnx={onnx_file}  --saveEngine={trt_file} --fp16")
+    engine = onnx_to_trt(onnx_file, trt_file, fp16=True, workspace_fraction=0.8)
+
     shutil.copy(trt_file, os.path.join(r"D:\code\dipper.ai\output\release\engine", os.path.basename(trt_file)))
 
-    # engine = onnx_to_trt(onnx_file, trt_file, fp16=True, workspace_fraction=0.5)
