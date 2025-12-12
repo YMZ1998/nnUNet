@@ -1,5 +1,4 @@
 import SimpleITK as sitk
-import numpy as np
 
 
 def convert_LPI_to_RAI(image):

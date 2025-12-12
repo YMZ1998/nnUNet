@@ -8,7 +8,7 @@ def get_all_task_ids(nnUNet_raw_path):
     task_ids = []
     for folder_name in os.listdir(nnUNet_raw_path):
         # 匹配 TaskXXX_... 格式
-        match = re.match(r'Task(\d+)_.*', folder_name)
+        match = re.match(r'Dataset(\d+)_.*', folder_name)
         if match:
             task_ids.append(int(match.group(1)))
     task_ids.sort()
