@@ -1,0 +1,206 @@
+syntax = "proto3";
+package dtai;
+
+message project_t {
+    message member_t {
+        string ref_user_guid = 1;
+        repeated string project_chmod = 2;
+        repeated string simple_chmod = 3;
+        repeated string module_chmod = 5;
+        bool own = 6;
+    }
+    string uuid = 1;
+    string create_time = 2;
+    string name = 3;
+    string description = 4;
+    repeated string standard_roi_names = 5;
+    repeated member_t members = 6;
+    bool deleted = 7;
+    string last_modify_time = 8;
+    string institution_id = 9;
+}
+
+message simple_set_t {
+    message roi_t {
+        int32 origin_index = 1;        //origin rtss.roi.number
+        string origin_name = 2;
+        double origin_size = 3;
+        repeated int32 origin_color = 4;     //rgb 0 - 255
+        int32 standard_roi_name_index = 5; //mapping to standard roi name 
+        string roi_type = 6;
+    }
+    message rtss_t {
+        string origin_rtss_id = 1;
+        string rtss_name = 2;
+        repeated roi_t roi_list = 5;
+    }
+    message simple_t {
+        string uuid = 1;
+        string ref_patient_id = 2;
+        string ref_image_id = 3;
+        string ref_image_name = 4;
+        rtss_t rtss = 5;
+    }
+    string uuid = 1;
+    string ref_project_id = 2;
+    string create_time = 3;
+    string name = 4;
+    string tag = 5;
+    string description = 6;
+    repeated simple_t simples = 7;
+    bool locked = 8;
+    bool deleted = 9;
+    string last_modify_time = 10; 
+}
+
+message algo_t {
+    repeated string algo = 1;
+}
+
+message device_t {    
+    message work_t {
+        message training_work_t {
+            string update_source_id = 1;
+            string preprocess_args = 2;
+            string train_args = 3;
+            string algo = 4;
+            repeated simple_set_t.simple_t training_simples = 5;
+            repeated simple_set_t.simple_t vaild_simples = 6;
+            repeated simple_set_t.simple_t test_simples = 7;
+            repeated string standard_roi_names = 8;
+            string institution_id = 9; 
+            string oss_path = 10;
+            string assessment_update_source_id = 11;
+        }
+
+        message assessment_work_t {
+            string update_source_id = 1;
+            string oss_path = 2;
+            repeated simple_set_t.simple_t test_simples = 5; 
+            repeated string standard_roi_names = 6;
+            string institution_id = 7; 
+        }
+
+        enum type_t {
+            none = 0;
+            training = 1;
+            assessment = 2;
+        }
+        type_t type = 1;
+        training_work_t training_work = 2;
+        assessment_work_t assessment_work = 3; 
+    }   
+    message gpu_t {
+        string serial = 1;
+        string memory = 2;              //gb  like 4GB
+        string extra = 3;  
+    }
+    string uuid = 1;
+    string create_time = 2;
+    string name = 3;
+    string ip = 4;
+    string last_online_time = 5;
+    string last_modify_time = 6; 
+    repeated gpu_t gpus = 7;
+    work_t current_work = 8;     
+}
+
+message module_version_data_t {
+    message point_t {
+        int32 epoch = 1;
+        double evaluation_metric = 2;
+        double loss_tr = 3;
+        double loss_val = 4;
+        string extra = 5;
+    }
+    string uuid = 1; 
+    string ref_version_id = 2;
+    repeated point_t points = 3; 
+}
+
+message module_version_t {
+    enum action_t {
+        action_none = 0;
+        action_export = 1;
+        action_pause = 2;
+        action_continue = 3;
+        action_redo = 4;
+        action_cancel = 5;
+    }
+    enum status_t {
+        none = 0;               //only for web
+        preprocessing = 1;
+        preprocessing_failed = 2;
+        training = 3;
+        failed = 4;
+        finish = 5;
+        pause = 6;
+        exporting = 7;
+        canceled = 8;
+    }
+    string uuid = 1;
+    string ref_module_id = 2;
+    int32 index = 3;
+    string ref_simple_set_id = 4;
+    string create_time = 5;
+    string description = 6;
+    string ref_device_id = 7;
+    string ref_algo_id = 8;
+    string preprocess_args = 9; // json
+    string train_args = 10;     //json
+    status_t status = 11;
+    int32 progress = 12;
+    string oss_path = 13;
+    repeated string train_simples = 14;
+    repeated string vaild_simples = 15;     //simple_t uuid
+    string error_message = 16;
+    string last_modify_time = 17;
+    string ref_test_simple_set_id = 18;
+    string ref_data_id = 19;
+    action_t last_action = 20; 
+    bool deleted = 21;
+}
+
+message assessment_t {
+    enum status_t {
+        created = 0;
+        finish = 1;
+        failed = 2;
+    }
+    message roi_dice_t {
+        string roi_name = 1;
+        double value = 2;
+    }
+    message dice_t {
+        string patient_name = 1;
+        repeated roi_dice_t rois = 2;
+    }
+    string uuid = 1;
+    string ref_module_id = 2;
+    string ref_version_id = 3;      //if empty this assessment for extern import module
+    string create_time = 4;
+    string ref_device_id = 5;
+    string ref_simple_set_id = 6;
+    string description = 7;
+    repeated dice_t dices = 8;
+    status_t status = 9;
+    string error_message = 10;
+}
+
+message module_t {
+    enum source_t {
+        own = 0;
+        extern = 1;
+    }
+    string uuid = 1;
+    string ref_project_id = 2;
+    string create_time = 3;
+    string name = 4; 
+    string description = 5;
+    bool deleted = 6;
+    string last_modify_time = 7; 
+    source_t source = 8;
+    string creator = 9;                 //user id
+    int32 version_count = 10;
+    string oss_path = 11;
+}
