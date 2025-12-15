@@ -3,17 +3,18 @@ import os
 import socket
 from typing import Union, Optional
 
-import nnunetv2
 import torch.cuda
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from batchgenerators.utilities.file_and_folder_operations import join, isfile, load_json
+from torch.backends import cudnn
+
+import nnunetv2
 from nnunetv2.paths import nnUNet_preprocessed
 from nnunetv2.run.load_pretrained_weights import load_pretrained_weights
 from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
-from torch.backends import cudnn
 
 
 def find_free_network_port() -> int:
@@ -32,19 +33,20 @@ def find_free_network_port() -> int:
 def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           configuration: str,
                           fold: int,
+                          num_epochs: int,
                           trainer_name: str = 'nnUNetTrainer',
                           plans_identifier: str = 'nnUNetPlans',
                           device: torch.device = torch.device('cuda')):
     # load nnunet class and do sanity checks
     nnunet_trainer = recursive_find_python_class(join(nnunetv2.__path__[0], "training", "nnUNetTrainer"),
-                                                trainer_name, 'nnunetv2.training.nnUNetTrainer')
+                                                 trainer_name, 'nnunetv2.training.nnUNetTrainer')
     if nnunet_trainer is None:
         raise RuntimeError(f'Could not find requested nnunet trainer {trainer_name} in '
                            f'nnunetv2.training.nnUNetTrainer ('
                            f'{join(nnunetv2.__path__[0], "training", "nnUNetTrainer")}). If it is located somewhere '
                            f'else, please move it there.')
     assert issubclass(nnunet_trainer, nnUNetTrainer), 'The requested nnunet trainer class must inherit from ' \
-                                                    'nnUNetTrainer'
+                                                      'nnUNetTrainer'
 
     # handle dataset input. If it's an ID we need to convert to int from string
     if dataset_name_or_id.startswith('Dataset'):
@@ -61,9 +63,8 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
     preprocessed_dataset_folder_base = join(nnUNet_preprocessed, maybe_convert_to_dataset_name(dataset_name_or_id))
     plans_file = join(preprocessed_dataset_folder_base, plans_identifier + '.json')
     plans = load_json(plans_file)
-    # plans['configurations']['3d_fullres']['batch_size'] = 4
     dataset_json = load_json(join(preprocessed_dataset_folder_base, 'dataset.json'))
-    nnunet_trainer = nnunet_trainer(plans=plans, configuration=configuration, fold=fold,
+    nnunet_trainer = nnunet_trainer(plans=plans, configuration=configuration, fold=fold, num_epochs=num_epochs,
                                     dataset_json=dataset_json, device=device)
     return nnunet_trainer
 
@@ -82,7 +83,7 @@ def maybe_load_checkpoint(nnunet_trainer: nnUNetTrainer, continue_training: bool
             expected_checkpoint_file = join(nnunet_trainer.output_folder, 'checkpoint_best.pth')
         if not isfile(expected_checkpoint_file):
             print(f"WARNING: Cannot continue training because there seems to be no checkpoint available to "
-                               f"continue from. Starting a new training...")
+                  f"continue from. Starting a new training...")
             expected_checkpoint_file = None
     elif validation_only:
         expected_checkpoint_file = join(nnunet_trainer.output_folder, 'checkpoint_final.pth')
@@ -137,6 +138,7 @@ def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p, disable_checkp
 
 def run_training(dataset_name_or_id: Union[str, int],
                  configuration: str, fold: Union[int, str],
+                 num_epochs: int = 1000,
                  trainer_class_name: str = 'nnUNetTrainer',
                  plans_identifier: str = 'nnUNetPlans',
                  pretrained_weights: Optional[str] = None,
@@ -153,12 +155,15 @@ def run_training(dataset_name_or_id: Union[str, int],
               "Please consider using those instead! "
               "Read more here: https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/resenc_presets.md"
               "\n############################\n")
+        print("------num_epochs is {} -------".format(num_epochs))
+
     if isinstance(fold, str):
         if fold != 'all':
             try:
                 fold = int(fold)
             except ValueError as e:
-                print(f'Unable to convert given value for fold to int: {fold}. fold must bei either "all" or an integer!')
+                print(
+                    f'Unable to convert given value for fold to int: {fold}. fold must bei either "all" or an integer!')
                 raise e
 
     if val_with_best:
@@ -190,13 +195,14 @@ def run_training(dataset_name_or_id: Union[str, int],
                  nprocs=num_gpus,
                  join=True)
     else:
-        nnunet_trainer = get_trainer_from_args(dataset_name_or_id, configuration, fold, trainer_class_name,
+        nnunet_trainer = get_trainer_from_args(dataset_name_or_id, configuration, fold, num_epochs, trainer_class_name,
                                                plans_identifier, device=device)
 
         if disable_checkpointing:
             nnunet_trainer.disable_checkpointing = disable_checkpointing
 
-        assert not (continue_training and only_run_validation), f'Cannot set --c and --val flag at the same time. Dummy.'
+        assert not (
+                continue_training and only_run_validation), f'Cannot set --c and --val flag at the same time. Dummy.'
 
         maybe_load_checkpoint(nnunet_trainer, continue_training, only_run_validation, pretrained_weights)
 
@@ -221,6 +227,8 @@ def run_training_entry():
                         help="Configuration that should be trained")
     parser.add_argument('fold', type=str,
                         help='Fold of the 5-fold cross-validation. Should be an int between 0 and 4.')
+    parser.add_argument('-num_epochs', type=int, default=1000, required=False,
+                        help='Number of train epochs.')
     parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
                         help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnUNetTrainer')
     parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
@@ -251,7 +259,8 @@ def run_training_entry():
                          "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_train [...] instead!")
     args = parser.parse_args()
 
-    assert args.device in ['cpu', 'cuda', 'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'
+    assert args.device in ['cpu', 'cuda',
+                           'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'
     if args.device == 'cpu':
         # let's allow torch to use hella threads
         torch.set_num_threads(multiprocessing.cpu_count())
@@ -264,7 +273,8 @@ def run_training_entry():
     else:
         device = torch.device('mps')
 
-    run_training(args.dataset_name_or_id, args.configuration, args.fold, args.tr, args.p, args.pretrained_weights,
+    run_training(args.dataset_name_or_id, args.configuration, args.fold, args.num_epochs, args.tr, args.p,
+                 args.pretrained_weights,
                  args.num_gpus, args.npz, args.c, args.val, args.disable_checkpointing, args.val_best,
                  device=device)
 

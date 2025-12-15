@@ -26,10 +26,11 @@ def training_model(task_id):
         configuration='3d_fullres',
         fold="all",
         dataset_json=dataset_json,
+        num_epochs=500,
         device=torch.device('cuda'),
     )
 
-    trainer.num_epochs = 1000
+    # trainer.num_epochs = 1000
     print("num_epochs: ", trainer.num_epochs)
     # trainer.initialize()
 

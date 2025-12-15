@@ -15,7 +15,7 @@ def to_numpy(tensor):
     return tensor.detach().cpu().numpy()
 
 
-def convert_and_validate_onnx(model_dir, fold, export_file):
+def convert_and_validate_onnx(model_dir, export_file, fold='all'):
     predictor = nnUNetPredictor(
         tile_step_size=0.5,
         use_gaussian=False,
@@ -101,4 +101,4 @@ if __name__ == "__main__":
     print("Model directory:", model_dir)
 
     export_file = os.path.join(model_dir, 'model.onnx')
-    convert_and_validate_onnx(model_dir, fold, export_file)
+    convert_and_validate_onnx(model_dir, export_file, fold)

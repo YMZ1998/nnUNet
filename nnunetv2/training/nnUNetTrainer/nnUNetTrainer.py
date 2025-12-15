@@ -36,11 +36,11 @@ from batchgeneratorsv2.transforms.utils.pseudo2d import Convert3DTo2DTransform, 
 from batchgeneratorsv2.transforms.utils.random import RandomTransform
 from batchgeneratorsv2.transforms.utils.remove_label import RemoveLabelTansform
 from batchgeneratorsv2.transforms.utils.seg_to_regions import ConvertSegmentationToRegionsTransform
+from torch import GradScaler
 from torch import autocast, nn
 from torch import distributed as dist
 from torch._dynamo import OptimizedModule
 from torch.cuda import device_count
-from torch import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from nnunetv2.configuration import ANISO_THRESHOLD, default_num_processes
@@ -50,8 +50,8 @@ from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 from nnunetv2.inference.sliding_window_prediction import compute_gaussian
 from nnunetv2.paths import nnUNet_preprocessed, nnUNet_results
 from nnunetv2.training.data_augmentation.compute_initial_patch_size import get_patch_size
-from nnunetv2.training.dataloading.nnunet_dataset import infer_dataset_class
 from nnunetv2.training.dataloading.data_loader import nnUNetDataLoader
+from nnunetv2.training.dataloading.nnunet_dataset import infer_dataset_class
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
 from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
@@ -68,7 +68,7 @@ from nnunetv2.utilities.plans_handling.plans_handler import PlansManager
 
 
 class nnUNetTrainer(object):
-    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict,
+    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, num_epochs=1000,
                  device: torch.device = torch.device('cuda')):
         # From https://grugbrain.dev/. Worth a read ya big brains ;-)
 
@@ -148,7 +148,7 @@ class nnUNetTrainer(object):
         self.probabilistic_oversampling = False
         self.num_iterations_per_epoch = 100
         self.num_val_iterations_per_epoch = 50
-        self.num_epochs = 1000
+        self.num_epochs = num_epochs
         self.current_epoch = 0
         self.enable_deep_supervision = False
 
@@ -189,13 +189,13 @@ class nnUNetTrainer(object):
 
         self.was_initialized = False
 
-        self.print_to_log_file("\n#######################################################################\n"
-                               "Please cite the following paper when using nnU-Net:\n"
-                               "Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). "
-                               "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. "
-                               "Nature methods, 18(2), 203-211.\n"
-                               "#######################################################################\n",
-                               also_print_to_console=True, add_timestamp=False)
+        # self.print_to_log_file("\n#######################################################################\n"
+        #                        "Please cite the following paper when using nnU-Net:\n"
+        #                        "Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). "
+        #                        "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. "
+        #                        "Nature methods, 18(2), 203-211.\n"
+        #                        "#######################################################################\n",
+        #                        also_print_to_console=True, add_timestamp=False)
 
     def initialize(self):
         if not self.was_initialized:
@@ -693,16 +693,16 @@ class nnUNetTrainer(object):
 
     @staticmethod
     def get_training_transforms(
-            patch_size: Union[np.ndarray, Tuple[int]],
-            rotation_for_DA: RandomScalar,
-            deep_supervision_scales: Union[List, Tuple, None],
-            mirror_axes: Tuple[int, ...],
-            do_dummy_2d_data_aug: bool,
-            use_mask_for_norm: List[bool] = None,
-            is_cascaded: bool = False,
-            foreground_labels: Union[Tuple[int, ...], List[int]] = None,
-            regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-            ignore_label: int = None,
+        patch_size: Union[np.ndarray, Tuple[int]],
+        rotation_for_DA: RandomScalar,
+        deep_supervision_scales: Union[List, Tuple, None],
+        mirror_axes: Tuple[int, ...],
+        do_dummy_2d_data_aug: bool,
+        use_mask_for_norm: List[bool] = None,
+        is_cascaded: bool = False,
+        foreground_labels: Union[Tuple[int, ...], List[int]] = None,
+        regions: List[Union[List[int], Tuple[int, ...], int]] = None,
+        ignore_label: int = None,
     ) -> BasicTransform:
         transforms = []
         if do_dummy_2d_data_aug:
@@ -844,11 +844,11 @@ class nnUNetTrainer(object):
 
     @staticmethod
     def get_validation_transforms(
-            deep_supervision_scales: Union[List, Tuple, None],
-            is_cascaded: bool = False,
-            foreground_labels: Union[Tuple[int, ...], List[int]] = None,
-            regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-            ignore_label: int = None,
+        deep_supervision_scales: Union[List, Tuple, None],
+        is_cascaded: bool = False,
+        foreground_labels: Union[Tuple[int, ...], List[int]] = None,
+        regions: List[Union[List[int], Tuple[int, ...], int]] = None,
+        ignore_label: int = None,
     ) -> BasicTransform:
         transforms = []
         transforms.append(
@@ -950,10 +950,10 @@ class nnUNetTrainer(object):
         with open(os.devnull, 'w') as f:
             sys.stdout = f
             if self.dataloader_train is not None and \
-                    isinstance(self.dataloader_train, (NonDetMultiThreadedAugmenter, MultiThreadedAugmenter)):
+                isinstance(self.dataloader_train, (NonDetMultiThreadedAugmenter, MultiThreadedAugmenter)):
                 self.dataloader_train._finish()
             if self.dataloader_val is not None and \
-                    isinstance(self.dataloader_train, (NonDetMultiThreadedAugmenter, MultiThreadedAugmenter)):
+                isinstance(self.dataloader_train, (NonDetMultiThreadedAugmenter, MultiThreadedAugmenter)):
                 self.dataloader_val._finish()
             sys.stdout = old_stdout
 
@@ -964,7 +964,7 @@ class nnUNetTrainer(object):
         self.network.train()
         self.lr_scheduler.step(self.current_epoch)
         self.print_to_log_file('')
-        self.print_to_log_file(f'Epoch {self.current_epoch}')
+        self.print_to_log_file(f'Epoch {self.current_epoch + 1} / {self.num_epochs}')
         self.print_to_log_file(
             f"Current learning rate: {np.round(self.optimizer.param_groups[0]['lr'], decimals=5)}")
         # lrs are the same for all workers so we don't need to gather them in case of DDP training
