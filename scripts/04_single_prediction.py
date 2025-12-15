@@ -40,19 +40,19 @@ def nnUNet_predict(model_dir, checkpoint_name, input_file, output_file):
 
 if __name__ == "__main__":
     start_time = time.time()
-    TASK_ID = 5
+    TASK_ID = 999
     checkpoint_name = 'checkpoint_best.pth'
-    # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
-    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
+    # model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 
     model_dir = join(nnUNet_results, dataset_name, model_config)
 
-    images_tr_dir = join(nnUNet_raw, dataset_name, 'imagesTr')
-    input_file = join(images_tr_dir, os.listdir(images_tr_dir)[0])
-    print(f"Input file: {input_file}")
+    # images_tr_dir = join(nnUNet_raw, dataset_name, 'imagesTr')
+    # input_file = join(images_tr_dir, os.listdir(images_tr_dir)[0])
+    # print(f"Input file: {input_file}")
+    # output_file = join(model_dir, os.path.basename(input_file).replace('.nii.gz', '_seg.nii.gz'))
 
-    output_file = join(model_dir, os.path.basename(input_file).replace('.nii.gz', '_seg.nii.gz'))
     input_file = r'D:\Data\Test\case9\Thorax.nii.gz'
     # input_file=r'D:\Data\Test\case9\unet3d_pre_vol.nii.gz'
     output_file = input_file.replace('.nii.gz', '_seg.nii.gz')

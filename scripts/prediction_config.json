@@ -1,0 +1,11 @@
+{
+    "task_id": 999,
+    "model_config": "nnUNetTrainer__nnUNetPlans__3d_fullres",
+    "checkpoint": "checkpoint_best.pth",
+    "input_file": "D:/Data/Test/case9/Thorax.nii.gz",
+    "output_file": "D:/Data/Test/case9/Thorax_seg.nii.gz",
+    "device_id": 0,
+    "tile_step_size": 10,
+    "use_gaussian": true,
+    "use_mirroring": false
+}

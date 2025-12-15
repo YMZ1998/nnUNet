@@ -213,8 +213,8 @@ def create_dataset(input_dir: str,
 if __name__ == "__main__":
     create_dataset(
         input_dir=r"D:\Data\seg\Totalsegmentator_dataset_v201",
-        output_dir=os.path.join(nnUNet_raw, "Dataset005_TotalSegmentator"),
+        output_dir=os.path.join(nnUNet_raw, "Dataset006_TotalSegmentator_cardiac"),
         target_spacing=[3, 3, 3],
-        class_map=class_map_5_parts["class_map_part_organs"],
+        class_map=class_map_5_parts["class_map_part_cardiac"],
         num_cores=128
     )

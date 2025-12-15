@@ -28,11 +28,9 @@ def convert_onnx(model_dir, fold, export_file):
         allow_tqdm=True  # 是否使用tqdm
     )
 
-    # initializes the network architecture, loads the checkpoint
     predictor.initialize_from_trained_model_folder(
         model_dir,
         use_folds=fold,
-        # checkpoint_name='checkpoint_final.pth',
         checkpoint_name='checkpoint_best.pth',
     )
     predictor.network.load_state_dict(predictor.list_of_parameters[0])
