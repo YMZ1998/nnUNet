@@ -41,7 +41,7 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
     network = predictor.network.cuda(device)
     network.eval()
 
-    # 修复 InstanceNorm
+    # # 修复 InstanceNorm
     # for m in network.modules():
     #     if isinstance(m, (torch.nn.InstanceNorm1d,
     #                       torch.nn.InstanceNorm2d,
@@ -87,11 +87,16 @@ def convert_and_validate_onnx(model_dir, fold, export_file):
     print("ONNXRuntime output matches PyTorch output.")
 
 if __name__ == "__main__":
-    TASK_ID = 5
+    TASK_ID = 999
+    model_config = (
+        'nnUNetTrainer__nnUNetPlans__3d_fullres'
+        if TASK_ID > 900
+        else 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    )
+
     fold = 'all'
     dataset_name = maybe_convert_to_dataset_name(TASK_ID)
 
-    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
     model_dir = join(nnUNet_results, dataset_name, model_config)
     print("Model directory:", model_dir)
 

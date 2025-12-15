@@ -5,8 +5,8 @@ import tensorrt as trt
 
 from scripts.nnunet_model_paths import NNUnetModelPaths
 
-
-def test_trt_engine(trt_file, input_shape=(1, 1, 192, 160, 64)):
+trt.init_libnvinfer_plugins(None, "")
+def test_trt_engine(trt_file, input_shape):
     """
     测试 TensorRT engine 是否可用
     Args:
@@ -77,10 +77,14 @@ def test_trt_engine(trt_file, input_shape=(1, 1, 192, 160, 64)):
 # 示例
 # -----------------------------
 if __name__ == "__main__":
-    TASK_ID = 1
-    model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
+    TASK_ID = 999
+    model_config = (
+        'nnUNetTrainer__nnUNetPlans__3d_fullres'
+        if TASK_ID > 900
+        else 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    )
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
     trt_file = paths.trt_file
     print("trt_file:", trt_file)
-    outputs = test_trt_engine(trt_file, input_shape=(1, 1, 128, 128, 128))
+    outputs = test_trt_engine(trt_file, input_shape=(1, 1, 32, 256, 224))

@@ -24,7 +24,7 @@ class NNUnetModelPaths:
         self.checkpoint_best = join(self.model_dir, 'checkpoint_best.pth')
         self.checkpoint_final = join(self.model_dir, 'checkpoint_final.pth')
         self.onnx_file = join(self.model_dir, 'model.onnx')
-        self.trt_file = join(self.model_dir, f"dipper.ai.contour.oar.{self.task_name.lower()}.unet3d.engine")
+        self.trt_file = join(self.model_dir, f"dipper.ai.contour.target.{self.task_name.lower()}.unet3d.engine")
 
     def __repr__(self):
         return f"<NNUnetModelPaths(task_id={self.task_id}, model_dir={self.model_dir})>"

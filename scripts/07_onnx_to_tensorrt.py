@@ -64,8 +64,12 @@ def onnx_to_trt(onnx_file: str, trt_file: str, fp16: bool = True, workspace_frac
 
 
 if __name__ == "__main__":
-    TASK_ID = 5
-    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    TASK_ID = 999
+    model_config = (
+        'nnUNetTrainer__nnUNetPlans__3d_fullres'
+        if TASK_ID > 900
+        else 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    )
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
     onnx_file = paths.onnx_file

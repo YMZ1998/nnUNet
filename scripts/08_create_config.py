@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 
+from scripts.compare_roi_colors import color_hsv_uniform
 from scripts.nnunet_model_paths import NNUnetModelPaths
 
 
@@ -31,12 +32,18 @@ def convert_config(task_name, plans_file, dataset_json_file):
 
     now = datetime.datetime.now()
     formatted_time = now.strftime('%Y%m%d%H%M%S')
+    config_name = f"dipper.ai.contour.target.{task_name.lower()}.unet3d.json"
 
     cfg = {
         "task": task_name,
-        "group": "OAR",
+        "group": "Target",
         "active": "True",
-        "model_path": f"./engine/dipper.ai.contour.oar.{task_name.lower()}.unet3d.engine",
+        "dev_nb": "0",
+        "roi_geometry_header": "True",
+        "roi_restore_size": "True",
+        "contours_smooth_parameter": 4,
+        "contours_save_now": "False",
+        "model_path": "./engine/" + config_name.replace(".json", ".engine"),
         "mean_intensity": json_fg['mean'],
         "std_intensity": json_fg['std'],
         "lower_bound": json_fg.get('min', json_fg['mean'] - 3 * json_fg['std']),
@@ -67,17 +74,17 @@ def convert_config(task_name, plans_file, dataset_json_file):
 
     # 自动生成 class_dic 和 roi_list
     for label_id, roi_name in roi_name_list:
-        color = generate_color(label_id)  # 根据 label_id 生成颜色
+        # color = generate_color(label_id)  # 根据 label_id 生成颜色
+        color = color_hsv_uniform(label_id, len(roi_name_list))  # 根据 label_id 生成颜色
         cfg['class_dic'][str(label_id)] = roi_name
         cfg['expect_roi_list'].append(roi_name)
         cfg['roi_list'].append({
             "roi_name": roi_name,
             "color": color,
-            "type": "ORGAN",
+            "type": "TARGET",
             "translation": roi_name.replace("_", " ").title()
         })
 
-    config_name = f"dipper.ai.contour.oar.{task_name.lower()}.unet3d.json"
     out_filename = os.path.join(paths.model_dir, config_name)
     os.makedirs(os.path.dirname(out_filename), exist_ok=True)
     with open(out_filename, 'w') as json_file:
@@ -87,11 +94,12 @@ def convert_config(task_name, plans_file, dataset_json_file):
 
 
 if __name__ == '__main__':
-    TASK_ID = 5
-    # model_config = 'nnUNetTrainer__nnUNetPlans__3d_fullres'
-    model_config = 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    TASK_ID = 999
+    model_config = (
+        'nnUNetTrainer__nnUNetPlans__3d_fullres'
+        if TASK_ID > 900
+        else 'nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres'
+    )
     paths = NNUnetModelPaths(task_id=TASK_ID, model_config=model_config)
 
     convert_config(paths.dataset_name, paths.plans_file, paths.dataset_json_file)
-
-
