@@ -1,9 +1,0 @@
-syntax = "proto3";
-package DtspProto;
-message WS
-{
-    int32 request_id = 1;
-    string method = 2;
-    string error_code = 3;
-    bytes data = 4;
-}
