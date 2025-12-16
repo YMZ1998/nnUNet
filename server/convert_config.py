@@ -85,7 +85,7 @@ def convert_config(task_name, plans_file, dataset_json_file):
             "translation": roi_name.replace("_", " ").title()
         })
 
-    out_filename = os.path.join(paths.model_dir, config_name)
+    out_filename = os.path.join(os.path.dirname(dataset_json_file), config_name)
     os.makedirs(os.path.dirname(out_filename), exist_ok=True)
     with open(out_filename, 'w') as json_file:
         json.dump(cfg, json_file, indent=4)

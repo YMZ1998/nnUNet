@@ -1,9 +1,8 @@
-from nnunetv2.configuration import default_num_processes
 from nnunetv2.experiment_planning.plan_and_preprocess_api import extract_fingerprints, plan_experiments, preprocess
 
 
-def nnUNet_plan_and_preprocess(task_ids, configurations = ['2d', '3d_fullres', '3d_lowres'], num_preprocess =[8, 4, 8],
-                               overwrite_target_spacing = None):
+def nnUNet_plan_and_preprocess(task_ids, configurations=['2d', '3d_fullres', '3d_lowres'], num_preprocess=[8, 4, 8],
+                               overwrite_target_spacing=None):
     # fingerprint extraction
     print("Fingerprint extraction...")
     extract_fingerprints(task_ids)
@@ -14,7 +13,7 @@ def nnUNet_plan_and_preprocess(task_ids, configurations = ['2d', '3d_fullres', '
 
     # preprocessing
     print('Preprocessing...')
-    preprocess(task_ids,configurations = configurations,num_processes=num_preprocess) #
+    preprocess(task_ids, configurations=configurations, num_processes=num_preprocess)  #
 
 
 if __name__ == "__main__":

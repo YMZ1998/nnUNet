@@ -12,6 +12,7 @@ from batchgenerators.utilities.file_and_folder_operations import save_json, save
 import pyproto.file_list_pb2 as file_list_pb2
 import pyproto.ws_pb2 as ws_pb2
 from nnunetv2.paths import nnUNet_raw, nnUNet_preprocessed
+from server.DipperConnection import DipperConnection
 
 
 # 下载图像或勾画数据
@@ -117,9 +118,9 @@ def make_data_description(task, roi_list, train_cases, validation_cases, test_ca
     os.makedirs(os.path.join(out_base, "labelsTs").replace("\\", "/"), exist_ok=True)
     os.makedirs(os.path.join(out_base, "bodyTs").replace("\\", "/"), exist_ok=True)
     # # 验证数据
-    # os.makedirs(os.path.join(out_base, "imagesVal").replace("\\", "/"), exist_ok=True)
-    # os.makedirs(os.path.join(out_base, "labelsVal").replace("\\", "/"), exist_ok=True)
-    # os.makedirs(os.path.join(out_base, "bodyVal").replace("\\", "/"), exist_ok=True)
+    os.makedirs(os.path.join(out_base, "imagesVal").replace("\\", "/"), exist_ok=True)
+    os.makedirs(os.path.join(out_base, "labelsVal").replace("\\", "/"), exist_ok=True)
+    os.makedirs(os.path.join(out_base, "bodyVal").replace("\\", "/"), exist_ok=True)
 
     # 拷贝数据到nnUNet_raw_data
     for c in train_cases:
@@ -234,7 +235,7 @@ def prepare_data(task, roi_list, from_root):
                 body.CopyInformation(img)
                 sitk.WriteImage(body, filename)
             cases[type].append(case)
-
+    print("cases: ", cases)
     make_data_description(task, roi_list, cases['train'], cases['validation'], cases['test'], from_root)
 
 

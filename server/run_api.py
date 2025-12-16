@@ -1,4 +1,3 @@
-# 提供HTTP接口给dtAI调用
 import base64
 import json
 import os.path
@@ -15,24 +14,21 @@ from flask import request
 
 from server.utils import get_config
 
-
-def init():
-    # 初始化nnUnet内部数据环境变量
-    print('enter api!')
-    base = get_config('DEFAULT', 'data_root')
-    print("base:", base)
-    if base is None:
-        print('ERROR: invalid root path')
-    nnUNet_raw = os.path.join(base, "nnUNet_raw").replace("\\", "/")
-    nnUNet_preprocessed = os.path.join(base, "nnUNet_preprocessed").replace("\\", "/")
-    nnUNet_results = os.path.join(base, "nnUNet_results").replace("\\", "/")
-    maybe_mkdir_p(nnUNet_raw)
-    maybe_mkdir_p(nnUNet_preprocessed)
-    maybe_mkdir_p(nnUNet_results)
-    os.environ["nnUNet_raw"] = nnUNet_raw
-    os.environ["nnUNet_preprocessed"] = nnUNet_preprocessed
-    os.environ["nnUNet_results"] = nnUNet_results
-
+# 初始化nnUnet内部数据环境变量
+print('enter api!')
+base = get_config('DEFAULT', 'data_root')
+print("base:", base)
+if base is None:
+    print('ERROR: invalid root path')
+nnUNet_raw = os.path.join(base, "nnUNet_raw").replace("\\", "/")
+nnUNet_preprocessed = os.path.join(base, "nnUNet_preprocessed").replace("\\", "/")
+nnUNet_results = os.path.join(base, "nnUNet_results").replace("\\", "/")
+maybe_mkdir_p(nnUNet_raw)
+maybe_mkdir_p(nnUNet_preprocessed)
+maybe_mkdir_p(nnUNet_results)
+os.environ["nnUNet_raw"] = nnUNet_raw
+os.environ["nnUNet_preprocessed"] = nnUNet_preprocessed
+os.environ["nnUNet_results"] = nnUNet_results
 
 from DipperConnection import DipperConnection
 from download_data import download_volume, prepare_data
@@ -52,12 +48,13 @@ def free_data():
         "msg": ""
     }
     data = json.loads(request.data)
-    model_name = data['model_name']  # 训练模型名称
+    model_name = data['model_name']
     print('free_data: {}'.format(model_name))
     if model_name is None or model_name == '':
         response['msg'] = 'invalid model name'
         return response
-    data_path = adapter.get_nnunet_output_folder(model_name)
+    data_path = adapter.get_nnunet_download_folder(model_name)
+    print("remove data path:", data_path)
     if os.path.exists(data_path):
         shutil.rmtree(data_path)
     return response
@@ -78,7 +75,7 @@ def download_data():
     print('begin download_data {}'.format(image_guid))
 
     # 读取dipper服务器配置及本地文件缓存路径
-    dipper_ip = get_config('DEFAULT', 'dipper_ip')
+    dipper_ip = get_config('DEFAULT', 'dipper_database_ip')
     dipper_username = get_config('DEFAULT', 'dipper_username')
     dipper_pwd = get_config('DEFAULT', 'dipper_pwd')
     print("dipper_ip: ", dipper_ip)
@@ -156,7 +153,7 @@ def preprocess_data():
     match = re.search(r'Dataset(\d+)_', model_name)
     if match:
         task_id = int(match.group(1))  # 提取匹配的数字部分
-        print(task_id)  # 输出: 010
+        print("task_id: ", task_id)  # 输出: 010
     else:
         print("没有找到匹配的数字")
         response["msg"] = "invalid model name"
@@ -266,7 +263,7 @@ def download_train_result():
     onnx_filename = adapter.convert_checkpoint_onnx(model_name)
 
     # load roi_list from database
-    dipper_ip = get_config('DEFAULT', 'dipper_ip')
+    dipper_ip = get_config('DEFAULT', 'dipper_database_ip')
     dipper_ai_ip = get_config('DEFAULT', 'dipper_ai_ip')
     url = 'mongodb://datu_super_root:c74c112dc3130e35e9ac88c90d214555__strong@' + dipper_ip + ":27227/default_db?authSource=datu_data&directConnection=true"
     mongo_connect = pymongo.MongoClient(url, tz_aware=True)
@@ -281,7 +278,7 @@ def download_train_result():
     mongo_connect.close()
     roi_name_list = model["roi_name_list"]
     # 2. 生成tensor-rt config文件
-    config_filename = adapter.convert_tensorrt_config(model_name, roi_name_list)
+    config_filename = adapter.convert_tensorrt_config(model_name)
     print('config_filename', config_filename)
     print('onnx_filename', onnx_filename)
 
@@ -303,7 +300,6 @@ def download_train_result():
         res = session.post(url=url, json=req,
                            headers={'content_type': 'application/json'})
         print(url, 'res.status_code', res.status_code)
-        # 检查响应状态码
         if res.status_code != 200:  # 请求成功
             print(f"convert_tensorrt请求失败，状态码: {res.status_code}")
             return
@@ -316,9 +312,8 @@ def download_train_result():
     return response
 
 
-# 注册butler
 def register_butler(port):
-    dipper_ip = get_config('DEFAULT', 'dipper_ip')
+    dipper_ip = get_config('DEFAULT', 'dipper_database_ip')
     butler_addr = 'http://' + dipper_ip + ':9999/register'
     check = {
         "http": '/service/python/health',
@@ -334,30 +329,22 @@ def register_butler(port):
     }
     print('butler_addr', butler_addr)
 
-    # 最大重试次数
     max_retries = 1000
-
-    # 初始化重试计数器
     retries = 0
 
-    # 循环直到请求成功或达到最大重试次数
     while retries < max_retries:
         try:
             response = requests.post(butler_addr, data=json.dumps(request))
             if response.ok:
-                # 请求成功，退出循环
                 print(response)
                 break
             else:
-                # 请求失败，但不是由于网络问题，不再重试
                 print('POST请求失败:', response.status_code)
                 break
         except requests.exceptions.RequestException as e:
-            # 网络问题，记录异常并继续重试
             time.sleep(3)
             print(f'请求异常: {e}')
 
-        # 增加重试计数器
         retries += 1
 
 
@@ -367,7 +354,6 @@ def health():
 
 
 if __name__ == '__main__':
-    init()
     print('enter main')
     register_butler(5000)
     print("Start AI server!")

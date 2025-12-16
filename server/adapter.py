@@ -4,9 +4,9 @@ import subprocess
 import torch
 
 import nnunetv2
-from nnunetv2.paths import *
 from server.convert_config import convert_config
 from server.convert_onnx import convert_and_validate_onnx
+from server.run_api import nnUNet_results
 from server.utils import get_config
 
 # 网络参数
@@ -96,9 +96,10 @@ def convert_checkpoint_onnx(task_name):
 
 
 # 生成tensor-rt config
-def convert_tensorrt_config(task_name, roi_name_list):
+def convert_tensorrt_config(task_name):
     output_folder_name = get_nnunet_output_folder(task_name)
     plans_file = os.path.join(output_folder_name, 'plans.json')
-    out_filename=convert_config(task_name, plans_file, roi_name_list)
+    dataset_json_file = os.path.join(output_folder_name, 'dataset.json')
+    out_filename=convert_config(task_name, plans_file, dataset_json_file)
     return out_filename
 

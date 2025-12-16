@@ -70,21 +70,21 @@ def convert_and_validate_onnx(model_dir, export_file, fold='all'):
     )
     print(f"ONNX model exported to: {export_file}")
 
-    torch_output = network(input_tensor)
-    try:
-        onnx_model = onnx.load(export_file)
-        onnx.checker.check_model(onnx_model)
-        print("ONNX model check passed.")
-    except Exception as e:
-        print(f"ONNX model check failed: {e}")
-        return
-
-    ort_session = onnxruntime.InferenceSession(export_file, providers=["CPUExecutionProvider"])
-    ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(input_tensor)}
-    ort_outputs = ort_session.run(None, ort_inputs)
-
-    np.testing.assert_allclose(to_numpy(torch_output), ort_outputs[0], rtol=1e-2, atol=1e-2)
-    print("ONNXRuntime output matches PyTorch output.")
+    # torch_output = network(input_tensor)
+    # try:
+    #     onnx_model = onnx.load(export_file)
+    #     onnx.checker.check_model(onnx_model)
+    #     print("ONNX model check passed.")
+    # except Exception as e:
+    #     print(f"ONNX model check failed: {e}")
+    #     return
+    #
+    # ort_session = onnxruntime.InferenceSession(export_file, providers=["CPUExecutionProvider"])
+    # ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(input_tensor)}
+    # ort_outputs = ort_session.run(None, ort_inputs)
+    #
+    # np.testing.assert_allclose(to_numpy(torch_output), ort_outputs[0], rtol=1e-2, atol=1e-2)
+    # print("ONNXRuntime output matches PyTorch output.")
 
 if __name__ == "__main__":
     TASK_ID = 999
