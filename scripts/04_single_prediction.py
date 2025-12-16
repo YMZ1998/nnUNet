@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # print(f"Input file: {input_file}")
     # output_file = join(model_dir, os.path.basename(input_file).replace('.nii.gz', '_seg.nii.gz'))
 
-    input_file = r'D:\Data\Test\case9\Thorax.nii.gz'
+    input_file = r'D:\Data\Test\case10\Thorax.nii.gz'
     # input_file=r'D:\Data\Test\case9\unet3d_pre_vol.nii.gz'
     output_file = input_file.replace('.nii.gz', '_seg.nii.gz')
     print(f"Output file: {output_file}")

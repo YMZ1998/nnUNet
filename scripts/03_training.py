@@ -4,6 +4,7 @@ import torch
 from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
 from nnunetv2.paths import nnUNet_preprocessed
+from nnunetv2.run.run_training import maybe_load_checkpoint
 from nnunetv2.training.nnUNetTrainer.variants.data_augmentation.nnUNetTrainerNoMirroring import nnUNetTrainerNoMirroring
 from nnunetv2.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nnunetv2.utilities.plans_handling.plans_handler import PlansManager
@@ -26,14 +27,14 @@ def training_model(task_id):
         configuration='3d_fullres',
         fold="all",
         dataset_json=dataset_json,
-        num_epochs=500,
+        num_epochs=1000,
         device=torch.device('cuda'),
     )
 
     # trainer.num_epochs = 1000
     print("num_epochs: ", trainer.num_epochs)
     # trainer.initialize()
-
+    maybe_load_checkpoint(trainer, True, False, None)
     trainer.run_training()
 
 
